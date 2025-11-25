@@ -1,0 +1,1 @@
+//contains reset and clock and instantiates the datapath module
