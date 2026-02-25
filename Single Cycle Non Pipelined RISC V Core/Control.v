@@ -66,7 +66,7 @@ module Control (
                 ALUSrc = 0;
                 regWrite = 0;
             end
-            // ALUOp is predefined: 00 for lw, sw; 01 for beq and 10 for R and I type
+            // ALUOp is predefined: 00 for lw, sw; 01 for beq; 10 for R; 11 for I type
             // Branch = 1 only for beq; 0 for all else
             // ALUSrc = 1 (imm val / offset) for I and lw, sw and 0 (from reg) for R and beq
             // MemRead = 1 only for lw
@@ -77,6 +77,7 @@ module Control (
         endcase
      end
 endmodule
+
 
 
 
