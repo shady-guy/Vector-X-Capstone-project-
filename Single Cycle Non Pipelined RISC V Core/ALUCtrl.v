@@ -9,7 +9,7 @@ module ALUCtrl (
    always@(*) begin
        case(ALUOp)
            2'b00: ALUCtl = 4'b0000; // for LW and SW, Operation is addition
-           2'b01: ALUCtl = 4'b1000; // for BEQ, Operation is subtraction
+           2'b01: ALUCtl = funct3[2] ? 4'b0010 : 4'b1000; // SLT for blt and bge, subtraction for beq, bne
            2'b10: begin
                   ALUCtl = {1'b0, funct3};  // for R-type instruction, it depends on funct3 and funct7
                   if((funct3==0 | funct3==5) & (funct7[5])) ALUCtl = ALUCtl + 4'b1000; // handles add / sub and srl / sra
