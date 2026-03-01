@@ -15,13 +15,13 @@ module ALU (
         case (ALUCtl)
             4'b0000: {carry, ALUOut} = A + B;            // ADD, ADDI, LW, SW
             4'b0001: ALUOut = A << B;                    // SLL, SLLI
-            4'b0010: ALUOut = ($signed(A) < $signed(B)); // SLT, SLTI 
+            4'b0010: ALUOut = ($signed(A) < $signed(B)); // SLT, SLTI, BLT, BGE
             4'b0011: ALUOut = (A < B);                   // SLTU, SLTUI
             4'b0100: ALUOut = A ^ B;                     // XOR, XORI
             4'b0101: ALUOut = A >> B;                    // SRL, SRLI
             4'b0110: ALUOut = A | B;                     // OR, ORI         
             4'b0111: ALUOut = A & B;                     // AND, ANDI    
-            4'b1000: {carry, ALUOut} = A - B;            // SUB, BEQ
+            4'b1000: {carry, ALUOut} = A - B;            // SUB, BEQ, BNE
             4'b1101: ALUOut = $signed(A) >>> B;          // SRA, SRAI 
             default: ALUOut = 0;
         endcase
