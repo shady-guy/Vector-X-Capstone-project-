@@ -1,6 +1,6 @@
 import vector_pkg::*;
 
-module VALU (
+module vector_alu (
     input  vector_opcode_t           op,
     input  logic [VLEN-1:0]          vs1, // Vector Source 1
     input  logic [VLEN-1:0]          vs2, // Vector Source 2
@@ -19,7 +19,6 @@ module VALU (
             assign lane_active = (i < vl);
             
             always_comb begin
-                // Simple masking: Only compute if index < vl
                 if (lane_active) begin
                     case (op)
                         VADD:    vd_lane = vs1_lane + vs2_lane;
