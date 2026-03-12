@@ -1,7 +1,7 @@
 import vector_pkg::*;
 
 module vector_alu (
-    input  vector_opcode_t           op,
+    input  vector_opcode_t           aluop,
     input  logic [VLEN-1:0]          vs1, // Vector Source 1
     input  logic [VLEN-1:0]          vs2, // Vector Source 2
     input  logic [$clog2(LANES)-1:0] vl,  // Active vector length
