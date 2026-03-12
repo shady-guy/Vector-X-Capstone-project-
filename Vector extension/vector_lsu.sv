@@ -9,9 +9,8 @@ import vector_pkg::*;
     input logic rst,
 
     //control signals
-    input logic load,
-    input logic store,
     input vector_mem_mode_t mode, //and other stuff from pkg if needed
+    input vector_opcode_t op, //to determine load vs store, and other operations if needed
 
     //inputs config
     input logic [15:0] vl, //count of active vector elements 
@@ -38,6 +37,10 @@ import vector_pkg::*;
 // Internal signals
 logic [15:0] elem_idx; //index of current element
 logic [31:0] addr; //calculated mem_addr for current element
+logic load;
+logic store;
+assign load = (op == VLD);
+assign store = (op == VST);
 
 localparam SHIFT  = $clog2(ELEN/8); //number of bits to shift for element size
 //LSU operation modes

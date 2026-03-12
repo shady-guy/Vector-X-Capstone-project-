@@ -21,6 +21,9 @@ typedef enum logic [3:0] {
     VMAX,
     VMINU,
     VMAXU
+
+    VLD,
+    VST
 } vec_opcode_t;
 
 typedef enum logic [1:0] {
