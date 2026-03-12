@@ -20,4 +20,11 @@ package vector_pkg;
         VLOAD,
         VSTORE
     } vector_opcode_t;
+
+    typedef enum logic [1:0] {
+        UNIT_STRIDE,
+        STRIDE,
+        INDEX
+    } vector_mem_mode_t;
+    
 endpackage
