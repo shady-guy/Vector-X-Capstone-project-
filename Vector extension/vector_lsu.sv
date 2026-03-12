@@ -13,7 +13,7 @@ import vector_pkg::*;
     input vec_opcode_t lsuop, //to determine load vs store, and other operations if needed
 
     //inputs config
-    input logic [15:0] vl, //count of active vector elements 
+    input logic [31:0] vl, //count of active vector elements 
     input logic [31:0] base_addr,
     input logic [31:0] stride, //stride mode
     input logic [VLEN-1:0] index_vector, //index mode
