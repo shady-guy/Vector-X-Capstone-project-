@@ -13,7 +13,6 @@ import vector_pkg::*;
     output logic [LANES-1:0] lane_active
 );
 
-
 always_ff @(posedge clk or posedge rst) begin     //register configuration
     if (rst) begin
         vl  <= VLEN / SEW;
