@@ -10,7 +10,7 @@ import vector_pkg::*;
 
     //control signals
     input vector_mem_mode_t mode, //and other stuff from pkg if needed
-    input vector_opcode_t op, //to determine load vs store, and other operations if needed
+    input vec_opcode_t op, //to determine load vs store, and other operations if needed
 
     //inputs config
     input logic [15:0] vl, //count of active vector elements 
