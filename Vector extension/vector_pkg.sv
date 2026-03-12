@@ -1,8 +1,12 @@
 package vector_pkg;
-    localparam int VLEN     = 256;
-    localparam int SEW      = 32;
-    localparam int LANES    = 8; 
-    localparam int MAX_VREG = 32;
+
+parameter int VLEN  = 256;
+parameter int SEW  = 32;
+parameter int LANES = 4;
+parameter int MAX_VREG = 32;
+
+typedef logic [VLEN-1:0] vreg_t;
+typedef logic [SEW-1:0] elem_t;
 
     typedef enum logic [3:0] {
         VADD,
@@ -20,11 +24,4 @@ package vector_pkg;
         VLOAD,
         VSTORE
     } vector_opcode_t;
-
-    typedef enum logic [1:0] {
-        UNIT_STRIDE,
-        STRIDE,
-        INDEX
-    } vector_mem_mode_t;
-    
 endpackage
