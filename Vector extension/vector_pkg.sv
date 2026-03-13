@@ -4,6 +4,7 @@ parameter int VLEN  = 256;
 parameter int SEW  = 32;
 parameter int LANES = 4;
 parameter int MAX_VREG = 32;
+parameter int ELEN = 32;
     
 typedef logic [VLEN-1:0] vreg_t;
 typedef logic [SEW-1:0] elem_t;
