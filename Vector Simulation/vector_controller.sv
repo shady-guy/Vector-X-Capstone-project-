@@ -40,6 +40,24 @@ import vector_pkg::*;
     assign op_raw = instruction[31:28];
     assign op     = vector_opcode_t'(op_raw);
 
+    logic [6:0] opcode = instruction[6:0];
+    logic [2:0] funct3 = instruction[14:12];
+    logic [5:0] funct6 = instruction[31:26];
+    //logic       vm     = instruction[25];      // mask enable (RVV)
+
+    // Busy state
+    //logic vec_busy;
+    //assign vec_busy = (instruction[24:20] == 5'b11111) || (instruction[24:20] == 5'b11110);
+
+    // Busy state logic
+   /* if (vec_busy) begin
+        regwrite = 1'b0;
+        lsu_en   = 1'b0;
+        memtoreg = 1'b0;
+        alu_op   = VADD; // don't care
+        lsu_op   = VLOAD;
+    end else begin */
+
     // Main decoder — mirrors always_comb block style from ctrl_main.sv
     always_comb begin : Main_Decoder
         // Safe defaults
@@ -94,6 +112,26 @@ import vector_pkg::*;
                 lsu_en   = 1'b0;
             end
         endcase
+
+        // OP-V instructions
+        if (opcode == 7'b1010111) begin // OP-V
+            case (funct3)
+                3'b000: begin // OPIVV
+                    case (funct6)
+                        6'b000000: alu_op = VADD;
+                        6'b000010: alu_op = VSUB;
+                        6'b001001: alu_op = VAND;
+                        6'b001010: alu_op = VOR;
+                        6'b001011: alu_op = VXOR;
+                        6'b000111: alu_op = VMIN;
+                        6'b000101: alu_op = VMAX;
+                        default:   alu_op = VADD;
+                    endcase
+                    regwrite = 1'b1;
+                end
+            endcase
+        end
     end
+    //end
 
 endmodule

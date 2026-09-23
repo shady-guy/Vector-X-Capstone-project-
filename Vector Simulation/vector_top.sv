@@ -32,10 +32,11 @@ import vector_pkg::*;
     // PC
     // ----------------------------------------------------------------
     logic [31:0] pc, pc_next;
+    logic        vec_busy;
 
     always_ff @(posedge clk) begin : PC_Reg
         if (rst) pc <= 32'd0;
-        else     pc <= pc_next;
+        else if (!vec_busy) pc <= pc_next;
     end
 
     assign pc_next = pc + 32'd4;   // single cycle: always PC+4
@@ -56,9 +57,12 @@ import vector_pkg::*;
 
     assign instruction = imem[pc[31:2]];   // word-addressed
 
-    // ----------------------------------------------------------------
-    // Controller
-    // ----------------------------------------------------------------
+  // Hold the current vector instruction until it completes
+    logic [31:0] instr_hold;
+    logic        hold_valid;
+    logic [31:0] instr_to_exec;
+
+    // Controller outputs (declare before first use for older toolchains)
     logic                 regwrite;
     vector_opcode_t       alu_op;
     vector_opcode_t       lsu_op;
@@ -69,8 +73,29 @@ import vector_pkg::*;
     logic                 cfg_sel_vl;
     logic                 cfg_sel_sew;
 
+    assign vec_busy = lsu_en && !lsu_done;
+
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst) begin
+            hold_valid <= 1'b0;
+        end else if (vec_busy) begin
+            if (!hold_valid) begin
+                instr_hold <= instruction;
+                hold_valid <= 1'b1;
+            end
+        end else begin
+            hold_valid <= 1'b0;
+        end
+    end
+
+    assign instr_to_exec = hold_valid ? instr_hold : instruction;
+
+
+    // ----------------------------------------------------------------
+    // Controller
+    // ----------------------------------------------------------------
     vector_controller ctrl (
-        .instruction (instruction),
+        .instruction (instr_to_exec),
         .regwrite    (regwrite),
         .alu_op      (alu_op),
         .lsu_op      (lsu_op),
@@ -88,7 +113,7 @@ import vector_pkg::*;
     vector_datapath dp (
         .clk         (clk),
         .rst         (rst),
-        .instruction (instruction),
+        .instruction (instr_to_exec),
         .regwrite    (regwrite),
         .alu_op      (alu_op),
         .lsu_op      (lsu_op),
@@ -108,5 +133,7 @@ import vector_pkg::*;
         .mem_rdata   (mem_rdata),
         .lsu_done    (lsu_done)
     );
+
+  
 
 endmodule

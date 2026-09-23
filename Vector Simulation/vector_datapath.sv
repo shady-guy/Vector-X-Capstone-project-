@@ -51,6 +51,9 @@ import vector_pkg::*;
     // Config Unit — provides vl, sew, epv, lane_active
     logic [31:0]        vl, sew, epv;
     logic [LANES-1:0]   lane_active;
+    logic               vma;
+    logic               vta;
+    logic [2:0]         vsew;
 
     vector_config cfg_unit (
         .clk         (clk),
@@ -59,15 +62,29 @@ import vector_pkg::*;
         .cfg_data    (cfg_data),
         .cfg_sel_vl  (cfg_sel_vl),
         .cfg_sel_sew (cfg_sel_sew),
+        .cfg_sel_vma (1'b0),
+        .cfg_sel_vta (1'b0),
+        .cfg_sel_vlmul(1'b0),
         .vl          (vl),
         .sew         (sew),
         .epv         (epv),
-        .lane_active (lane_active)
+        .lane_active (lane_active),
+        .vma         (vma),
+        .vta         (vta),
+        .vsew        (vsew)
     );
 
     // Vector Register File
     logic [VLEN-1:0] read_data1, read_data2;
     logic [VLEN-1:0] write_data;
+    //new additions
+    logic [VLEN-1:0] vd_old;
+    logic [VLEN-1:0] mask_reg;
+    logic is_load;
+    logic regwrite_final;
+    
+    assign is_load = lsu_en && (lsu_op == VLOAD);
+    assign regwrite_final = regwrite && (!is_load || lsu_done);
 
     vector_register_file vrf (
         .clk      (clk),
@@ -77,8 +94,10 @@ import vector_pkg::*;
         .rd1      (read_data1),
         .rd2      (read_data2),
         .addr3    (rd),
+        .rd3      (vd_old),
+        .addrw    (rd),
         .wr_data  (write_data),
-        .regwrite (regwrite)
+        .regwrite (regwrite_final)
     );
 
     // VALU — uses read_data1 as vs1, read_data2 as vs2
@@ -88,11 +107,15 @@ import vector_pkg::*;
     assign vl_lanes = vl[$clog2(LANES+1)-1:0];
 
     VALU valu (
-        .op  (alu_op),
-        .vs1 (read_data1),
-        .vs2 (read_data2),
-        .vl  (vl_lanes),
-        .vd  (alu_result)
+        .op     (alu_op),
+        .vs1    (read_data1),
+        .vs2    (read_data2),
+        .vd_old (vd_old),
+        .mask   (mask_reg),
+        .vma    (vma),
+        .vta    (vta),
+        .vl     (vl_lanes),
+        .vd     (alu_result)
     );
     // LSU — base_addr from lower 32 bits of read_data1 (scalar addr)
     //       stride from sign-extended immediate
@@ -113,6 +136,8 @@ import vector_pkg::*;
         .stride       (stride_val),
         .index_vector (read_data2),           // vs2 = index vector
         .store_data   (read_data2),           // vs2 = data to store
+        .vsew         (vsew),
+        .lsu_en       (lsu_en),
         .load_data    (load_data),
         .mem_addr     (mem_addr),
         .mem_req      (mem_req),
@@ -126,5 +151,8 @@ import vector_pkg::*;
 
     // Writeback mux (memtoreg): 0 = ALU result, 1 = LSU load data
     assign write_data = memtoreg ? load_data : alu_result;
+
+
+    initial mask_reg = {VLEN{1'b1}}; // default all active
 
 endmodule

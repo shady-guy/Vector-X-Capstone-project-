@@ -112,6 +112,46 @@ module vector_tb;
         .lsu_done  (t_lsu_done)
     );
 
+    // Quick runtime monitor (prints first 40 cycles for debugging)
+    integer __cycle_cnt = 0;
+    always @(posedge clk) begin
+        __cycle_cnt = __cycle_cnt + 1;
+        if (__cycle_cnt <= 40) begin
+            #1; // wait small delta so signals settle
+            $display("C=%0d PC=%0h instr=%0h instr_to_exec=%0h rd=%0d rs1=%0d rs2=%0d regwrite(top)=%0b regwrite(dp)=%0b alu_op=%0h vd_old=%h vs1=%h vs2=%h alu_result=%h vrf3=%h vl=%0d vl_lanes=%0d mask=%b vma=%b vta=%b cfg_vl_reg=%0d cfg_vsew=%0d cfg_sew=%0d lsu_mreq=%0b lsu_mwrite=%0b lsu_maddr=%0h lsu_mwdata=%h lsu_mrdata=%h lsu_done=%0b",
+                     __cycle_cnt,
+                     dut_top.pc,
+                     dut_top.instruction,
+                     dut_top.instr_to_exec,
+                     dut_top.instruction[27:23],
+                     dut_top.instruction[22:18],
+                     dut_top.instruction[17:13],
+                     dut_top.regwrite,
+                     dut_top.dp.regwrite_final,
+                     dut_top.alu_op,
+                     dut_top.dp.vd_old,
+                     dut_top.dp.read_data1,
+                     dut_top.dp.read_data2,
+                     dut_top.dp.alu_result,
+                     dut_top.dp.vrf.vrf[3],
+                     dut_top.dp.vl,
+                     dut_top.dp.vl_lanes,
+                     dut_top.dp.mask_reg[0 +: 8],
+                     dut_top.dp.vma,
+                     dut_top.dp.vta,
+                     dut_top.dp.cfg_unit.vl_reg,
+                     dut_top.dp.cfg_unit.vtype_reg.vsew,
+                     dut_top.dp.cfg_unit.sew,
+                     lsu_mreq,
+                     lsu_mwrite,
+                     lsu_maddr,
+                     lsu_mwdata,
+                     lsu_mrdata,
+                     lsu_done
+            );
+        end
+    end
+
     //  DUT 2 — vector_lsu  (direct LSU tests)
 
     vector_mem_mode_t lsu_mode  = UNIT_STRIDE;
@@ -133,12 +173,14 @@ module vector_tb;
         .clk          (clk),
         .rst          (rst),
         .mode         (lsu_mode),
+        .lsu_en       (1'b1), // LSU always enabled
         .op           (lsu_op),
         .vl           (lsu_vl),
         .base_addr    (lsu_base),
         .stride       (lsu_stride),
         .index_vector (lsu_index),
         .store_data   (lsu_sdata),
+        .vsew        (3'd2),
         .load_data    (lsu_ldata),
         .mem_addr     (lsu_maddr),
         .mem_req      (lsu_mreq),
@@ -150,18 +192,16 @@ module vector_tb;
         .done         (lsu_done)
     );
 
-    // Zero-latency combinatorial memory model for LSU
-    // Reason: LSU address changes AFTER posedge (via NBA on elem_idx).
-    // A 1-cycle latency model captures the OLD address and returns
-    // wrong data for elements 1+.  Combinatorial model reads the
-    // current address instantly, so every element gets correct data.
-    logic [31:0] lsu_mem [0:1023] = '{default: 32'd0};
+    // Zero-latency combinatorial memory model for LSU.
+    // The testbench treats memory as byte-addressed at 32-bit granularity.
+    logic [ELEN-1:0] lsu_mem [0:1023] = '{default: 64'd0}; //32
 
     assign lsu_mvalid = lsu_mreq;
     assign lsu_mrdata = (lsu_mreq && lsu_mread) ? lsu_mem[lsu_maddr >> 2] : '0;
 
     // Capture stores on posedge (elem_idx and addr both stable at that point)
-    always_ff @(posedge clk) begin
+    // Use always (not always_ff) because this memory is also preloaded in initial blocks.
+    always @(posedge clk) begin
         if (lsu_mreq && lsu_mwrite)
             lsu_mem[lsu_maddr >> 2] <= lsu_mwdata;
     end
@@ -378,7 +418,7 @@ module vector_tb;
             automatic logic pass_flag = 1'b1;
             for (int i = 0; i < 4; i++) begin
                 automatic int widx = (32'h100 >> 2) + i;  // 0x40+i
-                if (lsu_mem[widx] !== 32'(i + 1)) begin
+                if (lsu_mem[widx] !== 64'(i + 1)) begin
                     $display("    VSTORE lane %0d: expected %0d, got %0d",
                              i, i+1, lsu_mem[widx]);
                     pass_flag = 1'b0;
@@ -408,7 +448,7 @@ module vector_tb;
         begin
             automatic logic pass_flag = 1'b1;
             for (int i = 0; i < 4; i++) begin
-                if (lsu_ldata[i*SEW +: SEW] !== 32'(i + 100)) begin
+                if (lsu_ldata[i*SEW +: SEW] !== 64'(i + 100)) begin
                     $display("    VLOAD lane %0d: expected %0d, got %0d",
                              i, i+100, lsu_ldata[i*SEW+:SEW]);
                     pass_flag = 1'b0;

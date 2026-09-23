@@ -17,6 +17,10 @@ import vector_pkg::*;
 
     // Write port
     input  logic [4:0]      addr3,
+    output logic [VLEN-1:0] rd3,
+
+    // Write port
+    input  logic [4:0]      addrw,
     input  logic [VLEN-1:0] wr_data,
     input  logic            regwrite
 );
@@ -28,15 +32,14 @@ import vector_pkg::*;
         if (rst) begin
             for (int i = 0; i < MAX_VREG; i++)
                 vrf[i] <= '0;
+        end else if (regwrite) begin
+            vrf[addrw] <= wr_data;
         end
-        else if (regwrite)
-            vrf[addr3] <= wr_data;
     end
 
-    // Asynchronous read, v0 hardwired to zero
-    always_comb begin : Read
+    always_comb begin
         rd1 = (addr1 == 5'd0) ? '0 : vrf[addr1];
         rd2 = (addr2 == 5'd0) ? '0 : vrf[addr2];
+        rd3 = (addr3 == 5'd0) ? '0 : vrf[addr3];
     end
-
 endmodule
