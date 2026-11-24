@@ -1,4 +1,4 @@
-module PC (
+tmodule PC (
     input clk,
     input rst,
     input wr_pc,
